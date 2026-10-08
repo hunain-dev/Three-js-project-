@@ -1,0 +1,228 @@
+    
+    
+
+import { useEffect } from "react";
+
+import * as THREE from "three";
+
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+
+const Mainwork = () => {
+  useEffect(() => {
+    // =========================
+    // SCENE
+    // =========================
+
+    const scene = new THREE.Scene();
+
+    scene.background = new THREE.Color("white");
+    
+    const timer = new THREE.Timer();
+
+
+    // =========================
+    // SIZE
+    // =========================
+
+    const size = {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+
+    // =========================
+    // TEXTURE
+    // =========================
+
+    const textureLoader = new THREE.TextureLoader();
+
+    const texture = textureLoader.load(
+      "./texture.jpg",
+      () => {
+        console.log("Texture loaded");
+      },
+      undefined,
+      (error) => {
+        console.log("Texture load nahi hui:", error);
+      }
+    );
+
+    texture.colorSpace = THREE.SRGBColorSpace;
+
+    // =========================
+    // GLB MODEL
+    // =========================
+
+    const gltfLoader = new GLTFLoader();
+
+    gltfLoader.load(
+      "./Model.glb",
+
+      // MODEL LOAD
+      (gltf) => {
+        console.log("Model loaded:", gltf);
+
+        // Model ke andar har object ko check karo
+        gltf.scene.traverse((child) => {
+          if (child.isMesh) {
+            console.log("Mesh:", child);
+
+            // Texture model par lagao
+            child.material.map = texture;
+
+            // Material ko update karo
+            child.material.needsUpdate = true;
+          }
+        });
+
+        // Model scene mein add karo
+        scene.add(gltf.scene);
+      },
+
+      // PROGRESS
+      (progress) => {
+        console.log(
+          "Loading:",
+          (progress.loaded / progress.total) * 100 + "%"
+        );
+      },
+
+      // ERROR
+      (error) => {
+        console.log("Model load nahi hua:", error);
+      }
+    );
+
+    // =========================
+    // LIGHTS
+    // =========================
+
+    const ambientLight = new THREE.AmbientLight("white", 2);
+
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight("white", 3);
+
+    directionalLight.position.set(2, 3, 4);
+
+    scene.add(directionalLight);
+
+    // =========================
+    // TEST CUBE
+    // =========================
+
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+
+    const material = new THREE.MeshBasicMaterial({
+      color: "red",
+    });
+
+    const mesh = new THREE.Mesh(geometry, material);
+
+    // Agar cube dekhna ho to uncomment karo
+    // scene.add(mesh);
+
+    // =========================
+    // CAMERA
+    // =========================
+
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      size.width / size.height,
+      0.1,
+      100
+    );
+
+    camera.position.z = 3;
+
+    camera.lookAt(0, 0, 0);
+
+    // =========================
+    // RENDERER
+    // =========================
+
+    const canvas = document.querySelector("#webgl");
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas,
+      antialias: true,
+    });
+
+    renderer.setSize(size.width, size.height);
+
+    renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio, 2)
+    );
+
+    // =========================
+    // ORBIT CONTROLS
+    // =========================
+
+    const controls = new OrbitControls(
+      camera,
+      renderer.domElement
+    );
+
+    controls.enableDamping = true;
+
+    // =========================
+    // ANIMATION
+    // =========================
+
+    function animate() {
+      timer.update();
+
+      controls.update();
+
+      const delta = timer.getDelta();
+
+      requestAnimationFrame(animate);
+
+      // Test cube rotation
+      mesh.rotation.x += delta;
+      mesh.rotation.y += delta;
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // =========================
+    // RESIZE
+    // =========================
+
+    function resize() {
+      size.width = window.innerWidth;
+
+      size.height = window.innerHeight;
+
+      renderer.setSize(size.width, size.height);
+
+      camera.aspect = size.width / size.height;
+
+      camera.updateProjectionMatrix();
+    }
+
+    window.addEventListener("resize", resize);
+
+    resize();
+
+    // =========================
+    // CLEANUP
+    // =========================
+
+    return () => {
+      window.removeEventListener("resize", resize);
+
+      controls.dispose();
+
+      renderer.dispose();
+    };
+  }, []);
+
+  return <canvas id="webgl"></canvas>;
+};
+
+export default Mainwork;
+

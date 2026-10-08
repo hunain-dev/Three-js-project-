@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+
+*{
+  box-sizing: border-box;
+
+}
+
+html,body{
+  height: 100%;
+  width: 100%;
+}
+
+::-webkit-scrollbar{
+  width: 0%;
+}
+
